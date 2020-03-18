@@ -1,5 +1,8 @@
 import torch
+import torch.nn.functional as F
+import torchvision.utils as utils
 from sklearn.metrics import accuracy_score
+import cv2
 
 def train_epoch(model, criterion, optimizer, dataloader, device, epoch, log_interval, writer):
     model.train()
@@ -77,3 +80,21 @@ def test(model, criterion, dataloader, device, epoch, writer):
     writer.add_scalars('Accuracy', {'test': test_acc}, epoch+1)
     print("Average Test Loss: {:.6f} | Acc: {:.2f}%".format(test_loss, test_acc*100))
 
+
+def visualize_attn(I, c):
+    # Image
+    img = I.permute((1,2,0)).cpu().numpy()
+    # Heatmap
+    N, C, H, W = c.size()
+    a = F.softmax(c.view(N,C,-1), dim=2).view(N,C,H,W)
+    up_factor = 32/H
+    # print(up_factor, I.size(), c.size())
+    if up_factor > 1:
+        a = F.interpolate(a, scale_factor=up_factor, mode='bilinear', align_corners=False)
+    attn = utils.make_grid(a, nrow=4, normalize=True, scale_each=True)
+    attn = attn.permute((1,2,0)).mul(255).byte().cpu().numpy()
+    attn = cv2.applyColorMap(attn, cv2.COLORMAP_JET)
+    attn = cv2.cvtColor(attn, cv2.COLOR_BGR2RGB)
+    # Add the heatmap to the image
+    vis = 0.6 * img + 0.4 * attn
+    return torch.from_numpy(vis).permute(2,0,1)
