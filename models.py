@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.hub import load_state_dict_from_url
 from attention import ProjectorBlock, LinearAttentionBlock
 
 """
@@ -160,21 +161,60 @@ class ResNet(nn.Module):
 
         return [x, c1, c2, c3, c4]
 
+    def load_my_state_dict(self, state_dict):
+        my_state_dict = self.state_dict()
+        for name, param in state_dict.items():
+            if name == 'fc.weight' or name == 'fc.bias':
+                continue
+            my_state_dict[name].copy_(param.data)
 
-def ResNet18(**kwargs):
-    return ResNet(BasicBlock, [2,2,2,2], **kwargs)
+model_urls = {
+    'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
+    'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
+    'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
+    'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
+    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
+}
 
-def ResNet34(**kwargs):
-    return ResNet(BasicBlock, [3,4,6,3], **kwargs)
+def ResNet18(pretrained=False, progress=True, **kwargs):
+    model = ResNet(BasicBlock, [2,2,2,2], **kwargs)
+    if pretrained:
+        state_dict = load_state_dict_from_url(model_urls['resnet18'],
+            progress=progress)
+        model.load_my_state_dict(state_dict)
+    return model
 
-def ResNet50(**kwargs):
-    return ResNet(Bottleneck, [3,4,6,3], **kwargs)
+def ResNet34(pretrained=False, progress=True, **kwargs):
+    model = ResNet(BasicBlock, [3,4,6,3], **kwargs)
+    if pretrained:
+        state_dict = load_state_dict_from_url(model_urls['resnet34'],
+            progress=progress)
+        model.load_my_state_dict(state_dict)
+    return model
 
-def ResNet101(**kwargs):
-    return ResNet(Bottleneck, [3,4,23,3], **kwargs)
+def ResNet50(pretrained=False, progress=True, **kwargs):
+    model = ResNet(Bottleneck, [3,4,6,3], **kwargs)
+    if pretrained:
+        state_dict = load_state_dict_from_url(model_urls['resnet50'],
+            progress=progress)
+        model.load_my_state_dict(state_dict)
+    return model
 
-def ResNet152(**kwargs):
-    return ResNet(Bottleneck, [3,8,36,3], **kwargs)
+def ResNet101(pretrained=False, progress=True, **kwargs):
+    model = ResNet(Bottleneck, [3,4,23,3], **kwargs)
+    if pretrained:
+        state_dict = load_state_dict_from_url(model_urls['resnet101'],
+            progress=progress)
+        model.load_my_state_dict(state_dict)
+    return model
+
+def ResNet152(pretrained=False, progress=True, **kwargs):
+    model = ResNet(Bottleneck, [3,8,36,3], **kwargs)
+    if pretrained:
+        state_dict = load_state_dict_from_url(model_urls['resnet152'],
+            progress=progress)
+        model.load_my_state_dict(state_dict)
+    return model
 
 # Test
 if __name__ == '__main__':
