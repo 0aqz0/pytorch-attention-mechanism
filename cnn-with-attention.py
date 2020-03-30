@@ -20,7 +20,7 @@ parser.add_argument('--attention', default=True, type=bool,
     help='Train with attention')
 parser.add_argument('--save', default=True, type=bool,
     help='Save the model')
-parser.add_argument('--save_path', default='./', type=str,
+parser.add_argument('--save_path', default='/home/haodong/Data/attention_models', type=str,
     help='Path to save the model')
 parser.add_argument('--visualize', action='store_true',
     help='Visualize the attention vector')
@@ -30,11 +30,11 @@ parser.add_argument('--epochs', default=200, type=int,
     help='Epochs for training')
 parser.add_argument('--batch_size', default=32, type=int,
     help='Batch size for training or testing')
-parser.add_argument('--lr', default=1e-4, type=float,
+parser.add_argument('--lr', default=1e-5, type=float,
     help='Learning rate for training')
 parser.add_argument('--device', default='0', type=str,
     help='Cuda device to use')
-parser.add_argument('--log_interval', default=20, type=int,
+parser.add_argument('--log_interval', default=100, type=int,
     help='Interval to print messages')
 args = parser.parse_args()
 
@@ -59,12 +59,12 @@ if __name__ == '__main__':
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
         ])
-    train_set = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
-    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=4)
-    test_set = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-    test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=True, num_workers=4)
+    train_set = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=16)
+    test_set = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
+    test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=True, num_workers=16)
     # Create model
-    model = ResNet18(attention=args.attention, num_classes=10).to(device)
+    model = ResNet18(pretrained=True, progress=True, attention=args.attention, num_classes=100).to(device)
     # Run the model parallelly
     if torch.cuda.device_count() > 1:
         print("Using {} GPUs".format(torch.cuda.device_count()))
