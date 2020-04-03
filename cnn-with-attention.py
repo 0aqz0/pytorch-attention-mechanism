@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.data import DataLoader
 import torchvision
 import torchvision.transforms as transforms
@@ -8,6 +9,7 @@ import torchvision.utils as utils
 from tensorboardX import SummaryWriter
 import os
 import argparse
+import numpy as np
 from datetime import datetime
 from models import ResNet18, ResNet34, ResNet50, ResNet101, ResNet152
 from functions import train_epoch, test, visualize_attn
@@ -16,9 +18,9 @@ from functions import train_epoch, test, visualize_attn
 parser = argparse.ArgumentParser(description='CNN with Attention')
 parser.add_argument('--train', action='store_true',
     help='Train the network')
-parser.add_argument('--attention', default=True, type=bool,
+parser.add_argument('--attention', action='store_true',
     help='Train with attention')
-parser.add_argument('--save', default=True, type=bool,
+parser.add_argument('--save', action='store_true',
     help='Save the model')
 parser.add_argument('--save_path', default='/home/haodong/Data/attention_models', type=str,
     help='Path to save the model')
@@ -26,11 +28,11 @@ parser.add_argument('--visualize', action='store_true',
     help='Visualize the attention vector')
 parser.add_argument('--checkpoint', default='checkpoint.pth', type=str,
     help='Path to checkpoint')
-parser.add_argument('--epochs', default=200, type=int,
+parser.add_argument('--epochs', default=300, type=int,
     help='Epochs for training')
-parser.add_argument('--batch_size', default=32, type=int,
+parser.add_argument('--batch_size', default=16, type=int,
     help='Batch size for training or testing')
-parser.add_argument('--lr', default=1e-5, type=float,
+parser.add_argument('--lr', default=1e-4, type=float,
     help='Learning rate for training')
 parser.add_argument('--device', default='0', type=str,
     help='Cuda device to use')
@@ -76,10 +78,14 @@ if __name__ == '__main__':
         # Create loss criterion & optimizer
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+        # lr_lambda = lambda epoch : np.power(0.5, int(epoch/25))
+        # scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lr_lambda)
 
         for epoch in range(args.epochs):
             train_epoch(model, criterion, optimizer, train_loader, device, epoch, args.log_interval, writer)
             test(model, criterion, test_loader, device, epoch, writer)
+            # adjust learning rate
+            # scheduler.step()
             if args.save:
                 torch.save(model.state_dict(), os.path.join(args.save_path, "epoch{:03d}.pth".format(epoch+1)))
 
