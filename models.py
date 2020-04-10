@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.hub import load_state_dict_from_url
-from attention import ProjectorBlock, LinearAttentionBlock
+from attention import AttentionBlock
+import math
 
 """
 Implementation of ResNet
@@ -99,16 +100,10 @@ class ResNet(nn.Module):
         # attention blocks
         self.attention = attention
         if self.attention:
-            self.attn1 = LinearAttentionBlock(in_channels=512*block.expansion, normalize_attn=True)
-            self.attn2 = LinearAttentionBlock(in_channels=512*block.expansion, normalize_attn=True)
-            self.attn3 = LinearAttentionBlock(in_channels=512*block.expansion, normalize_attn=True)
-            self.attn4 = LinearAttentionBlock(in_channels=512*block.expansion, normalize_attn=True)
-            self.projector1 = ProjectorBlock(in_channels=64*block.expansion, out_channels=512*block.expansion)
-            self.projector2 = ProjectorBlock(in_channels=128*block.expansion, out_channels=512*block.expansion)
-            self.projector3 = ProjectorBlock(in_channels=256*block.expansion, out_channels=512*block.expansion)
-            self.fc = nn.Linear(512 * block.expansion * 4, num_classes)
-        else:
-            self.fc = nn.Linear(512 * block.expansion, num_classes)
+            self.attn1 = AttentionBlock(in_channels=64*block.expansion)
+            self.attn2 = AttentionBlock(in_channels=128*block.expansion)
+            self.attn3 = AttentionBlock(in_channels=256*block.expansion)
+        self.fc = nn.Linear(512 * block.expansion, num_classes)
 
     def _make_layer(self, block, planes, blocks, stride):
         downsample = None
@@ -137,29 +132,22 @@ class ResNet(nn.Module):
         x = self.relu(x)
         x = self.maxpool(x)
 
-        l1 = self.layer1(x)
-        l2 = self.layer2(l1)
-        l3 = self.layer3(l2)
-        l4 = self.layer4(l3)
-
-        g = self.avgpool(l4)
-        # print(g.shape)
-        # attention
+        x = self.layer1(x)
         if self.attention:
-            # print(l1.shape, l2.shape, l3.shape, l4.shape, g.shape)
-            c1, g1 = self.attn1(self.projector1(l1), g)
-            c2, g2 = self.attn2(self.projector2(l2), g)
-            c3, g3 = self.attn3(self.projector3(l3), g)
-            c4, g4 = self.attn4(l4, g)
-            g = torch.cat((g1,g2,g3,g4), dim=1)
-            x = self.fc(g)
-        else:
-            c1, c2, c3, c4 = None, None, None, None
-            # x.size(0) ------ batch_size
-            g = g.view(g.size(0), -1)
-            x = self.fc(g)
+            x = self.attn1(x)
+        x = self.layer2(x)
+        if self.attention:
+            x = self.attn2(x)
+        x = self.layer3(x)
+        if self.attention:
+            x = self.attn3(x)
+        x = self.layer4(x)
 
-        return [x, c1, c2, c3, c4]
+        g = self.avgpool(x)
+        g = g.view(g.size(0), -1)
+        x = self.fc(g)
+
+        return x
 
     def load_my_state_dict(self, state_dict):
         my_state_dict = self.state_dict()
@@ -219,5 +207,5 @@ def ResNet152(pretrained=False, progress=True, **kwargs):
 # Test
 if __name__ == '__main__':
     model = ResNet18(attention=True, num_classes=10)
-    x = torch.randn(1,3,128,128)
+    x = torch.randn(16,3,128,128)
     print(model(x))
