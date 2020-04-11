@@ -12,7 +12,7 @@ Reference: Deep Residual Learning for Image Recognition
 class BasicBlock(nn.Module):
     expansion = 1
     # planes refer to the number of feature maps
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, attention=False):
         super(BasicBlock, self).__init__()
         self.downsample = downsample
         self.conv1 = nn.Conv2d(
@@ -22,6 +22,11 @@ class BasicBlock(nn.Module):
         self.conv2 = nn.Conv2d(
             planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
+
+        if attention:
+            self.attn = AttentionBlock(planes)
+        else:
+            self.attn = None
 
     def forward(self, x):
         residual = x
@@ -35,6 +40,9 @@ class BasicBlock(nn.Module):
         # downsample
         if self.downsample is not None:
             residual = self.downsample(x)
+        # attention
+        if self.attn is not None:
+            out = self.attn(out)
 
         # print(out.shape, residual.shape)
         out += residual
@@ -46,7 +54,7 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
     # planes refer to the number of feature maps
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, attention=False):
         super(Bottleneck, self).__init__()
         self.downsample = downsample
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False) # kernal_size=1 don't need padding
@@ -56,6 +64,11 @@ class Bottleneck(nn.Module):
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes * 4)
         self.relu = nn.ReLU(inplace=True)
+
+        if attention:
+            self.attn = AttentionBlock(planes * 4)
+        else:
+            self.attn = None
 
     def forward(self, x):
         residual = x
@@ -73,6 +86,9 @@ class Bottleneck(nn.Module):
         # downsample
         if self.downsample is not None:
             residual = self.downsample(x)
+        # attention
+        if self.attn is not None:
+            out = self.attn(out)
 
         # print(out.shape, residual.shape)
         out += residual
@@ -82,7 +98,7 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, layers, attention=False, num_classes=10):
+    def __init__(self, block, layers, num_classes=10, attention=False):
         super(ResNet, self).__init__()
         # initialize inplanes to 64, it'll be changed later
         self.inplanes = 64
@@ -91,10 +107,10 @@ class ResNet(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         # layers refers to the number of blocks in each layer
-        self.layer1 = self._make_layer(block, 64, layers[0], stride=1)
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
+        self.layer1 = self._make_layer(block, 64, layers[0], stride=1, attention=attention)
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2, attention=attention)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2, attention=attention)
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=2, attention=attention)
         # average pooling
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         # attention blocks
@@ -105,7 +121,7 @@ class ResNet(nn.Module):
             self.attn3 = AttentionBlock(in_channels=256*block.expansion)
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
-    def _make_layer(self, block, planes, blocks, stride):
+    def _make_layer(self, block, planes, blocks, stride, attention):
         downsample = None
         # when the in-channel and the out-channel dismatch, downsample!!!
         if stride != 1 or self.inplanes != planes * block.expansion:
@@ -118,11 +134,11 @@ class ResNet(nn.Module):
 
         layers = []
         # only the first block needs downsample.
-        layers.append(block(self.inplanes, planes, stride, downsample))
+        layers.append(block(self.inplanes, planes, stride, downsample, attention=attention))
         # change inplanes for the next layer
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
+            layers.append(block(self.inplanes, planes, attention=attention))
 
         return nn.Sequential(*layers)
 
