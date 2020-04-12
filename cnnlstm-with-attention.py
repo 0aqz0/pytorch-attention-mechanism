@@ -49,7 +49,10 @@ class ResCRNN(nn.Module):
         elif arch == "resnet152":
             resnet = models.resnet152(pretrained=True)
         # delete the last fc layer
-        modules = list(resnet.children())[:-2]
+        if self.attention:
+            modules = list(resnet.children())[:-2]
+        else:
+            modules = list(resnet.children())[:-1]
         self.resnet = nn.Sequential(*modules)
         # calclatue kernal size
         self.last_size = int(math.ceil(self.sample_size / 32))
@@ -71,7 +74,8 @@ class ResCRNN(nn.Module):
             # with torch.no_grad():
             out = self.resnet(x[:, :, t, :, :])
             # print(out.shape)
-            # out = out.view(out.size(0), -1)
+            if not self.attention:
+                out = out.view(out.size(0), -1)
             cnn_embed_seq.append(out)
 
         cnn_embed_seq = torch.stack(cnn_embed_seq, dim=0)
@@ -81,10 +85,10 @@ class ResCRNN(nn.Module):
 
         # LSTM
         # use faster code paths
-        N, T, C, H, W = cnn_embed_seq.size()
-        # print(N, T, C, H, W)
         self.lstm.flatten_parameters()
         if self.attention:
+            N, T, C, H, W = cnn_embed_seq.size()
+            # print(N, T, C, H, W)
             # (batch_size, channel, h, w)
             new_x = F.adaptive_avg_pool2d(cnn_embed_seq[:, 0, :, :, :], (1,1)).view(N, 1, C)
             out, (h_n, c_n) = self.lstm(new_x, None)
@@ -222,9 +226,9 @@ parser.add_argument('--weight_decay', default=1e-5, type=float,
     help='Weight decay for training')
 parser.add_argument('--device', default='0', type=str,
     help='Cuda device to use')
-parser.add_argument('--log_interval', default=20, type=int,
+parser.add_argument('--log_interval', default=100, type=int,
     help='Interval to print messages')
-parser.add_argument('--sample_size', default=256, type=int,
+parser.add_argument('--sample_size', default=128, type=int,
     help='Sample size for data')
 parser.add_argument('--sample_duration', default=16, type=int,
     help='Sample duration for data')
