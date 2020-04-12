@@ -93,6 +93,35 @@ class AttentionBlock(nn.Module):
         # print(attn.shape)
         return attn * x
 
+"""
+Temporal attention block
+Reference: https://github.com/philipperemy/keras-attention-mechanism
+"""
+class TemporalAttn(nn.Module):
+    def __init__(self, hidden_size):
+        super(TemporalAttn, self).__init__()
+        self.hidden_size = hidden_size
+        self.fc1 = nn.Linear(self.hidden_size, self.hidden_size, bias=False)
+        self.fc2 = nn.Linear(self.hidden_size*2, self.hidden_size, bias=False)
+
+    def forward(self, hidden_states):
+        # (batch_size, time_steps, hidden_size)
+        score_first_part = self.fc1(hidden_states)
+        # (batch_size, hidden_size)
+        h_t = hidden_states[:,-1,:]
+        # (batch_size, time_steps)
+        score = torch.bmm(score_first_part, h_t.unsqueeze(2)).squeeze(2)
+        attention_weights = F.softmax(score, dim=1)
+        # (batch_size, hidden_size)
+        context_vector = torch.bmm(hidden_states.permute(0,2,1), attention_weights.unsqueeze(2)).squeeze(2)
+        # (batch_size, hidden_size*2)
+        pre_activation = torch.cat((context_vector, h_t), dim=1)
+        # (batch_size, hidden_size)
+        attention_vector = self.fc2(pre_activation)
+        attention_vector = torch.tanh(attention_vector)
+
+        return attention_vector
+
 # Test
 if __name__ == '__main__':
     # # 2d block
@@ -112,3 +141,7 @@ if __name__ == '__main__':
     attn_block = AttentionBlock(in_channels=128)
     x = torch.randn(16, 128, 8, 8)
     print(attn_block(x).shape)
+    # temporal block
+    temporal_block = TemporalAttn(hidden_size=256)
+    x = torch.randn(16, 30, 256)
+    print(temporal_block(x).shape)
