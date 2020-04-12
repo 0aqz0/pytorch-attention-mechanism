@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.hub import load_state_dict_from_url
-from attention import AttentionBlock
+from attention import AttentionBlock, TemporalAttn
 import math
 
 """
@@ -220,8 +220,29 @@ def ResNet152(pretrained=False, progress=True, **kwargs):
         model.load_my_state_dict(state_dict)
     return model
 
+
+class AttnLSTM(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers):
+        super(AttnLSTM, self).__init__()
+        self.lstm = nn.LSTM(
+            input_size=input_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            batch_first=True)
+        self.attn = TemporalAttn(hidden_size=hidden_size)
+        self.fc = nn.Linear(hidden_size, 1)
+
+    def forward(self, x):
+        x, (h_n, c_n) = self.lstm(x)
+        x = self.attn(x)
+        x = self.fc(x)
+        return x
+
 # Test
 if __name__ == '__main__':
     model = ResNet18(attention=True, num_classes=10)
     x = torch.randn(16,3,128,128)
+    print(model(x))
+    model = AttnLSTM(input_size=1, hidden_size=128, num_layers=1)
+    x = torch.randn(16, 20, 1)
     print(model(x))
