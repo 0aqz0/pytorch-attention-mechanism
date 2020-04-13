@@ -15,15 +15,13 @@ parser.add_argument('--train', action='store_true',
     help='Train the network')
 parser.add_argument('--visualize', action='store_true',
     help='Visualize the attention vector')
-parser.add_argument('--no_attention', action='store_true',
-    help='Train without attention')
 parser.add_argument('--no_save', action='store_true',
     help='Not save the model')
 parser.add_argument('--save_path', default='/home/haodong/Data/attention_models', type=str,
     help='Path to save the model')
 parser.add_argument('--checkpoint', default='rnn_checkpoint.pth', type=str,
     help='Path to checkpoint')
-parser.add_argument('--epochs', default=50, type=int,
+parser.add_argument('--epochs', default=30, type=int,
     help='Epochs for training')
 parser.add_argument('--lr', default=1e-4, type=float,
     help='Learning rate for training')

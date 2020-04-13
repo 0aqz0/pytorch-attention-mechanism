@@ -17,11 +17,9 @@ Visualize attention map:
 $ python cnn-with-attention.py --visualize
 ```
 
-### Results
-
-
-
 ## RNN with attention
+
+<img align='center' src='figures/rnn-with-attention.png' width=480>
 
 ### Usage
 
@@ -37,14 +35,10 @@ Visualize attention map:
 $ python rnn-with-attention.py --visualize
 ```
 
-### Results
-
-
-
 ## Todos
 
 - [ ] CNN+attention
-- [ ] RNN+attention
+- [x] RNN+attention
 
 ## References
 
@@ -55,3 +49,4 @@ $ python rnn-with-attention.py --visualize
 - [BahdanauAttention与LuongAttention注意力机制简介](https://blog.csdn.net/u010960155/article/details/82853632)
 - [目前主流的attention方法都有哪些？](https://www.zhihu.com/question/68482809)
 
+- [Keras Attention Mechanism](https://github.com/philipperemy/keras-attention-mechanism)
