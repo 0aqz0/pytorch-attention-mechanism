@@ -5,6 +5,7 @@ from tensorboardX import SummaryWriter
 import os
 import argparse
 import numpy as np
+import matplotlib.pyplot as plt
 from datetime import datetime
 from models import AttnLSTM
 
@@ -20,7 +21,7 @@ parser.add_argument('--no_save', action='store_true',
     help='Not save the model')
 parser.add_argument('--save_path', default='/home/haodong/Data/attention_models', type=str,
     help='Path to save the model')
-parser.add_argument('--checkpoint', default='checkpoint.pth', type=str,
+parser.add_argument('--checkpoint', default='rnn_checkpoint.pth', type=str,
     help='Path to checkpoint')
 parser.add_argument('--epochs', default=50, type=int,
     help='Epochs for training')
@@ -56,9 +57,10 @@ def generate_data(n, seq_length, delimiter=0.0, index_1=None, index_2=None):
 
 if __name__ == '__main__':
     # Generate data
-    seq_length, train_length, val_length = 20, 20000, 4000
+    seq_length, train_length, val_length, test_length = 20, 20000, 4000, 10
     x_train, y_train = generate_data(train_length, seq_length)
     x_val, y_val = generate_data(val_length, seq_length)
+    x_test, y_test = generate_data(test_length, seq_length, index_1=5, index_2=13)
     # Create the model
     model = AttnLSTM(input_size=1, hidden_size=128, num_layers=1).to(device)
     # Run the model parallelly
@@ -83,7 +85,7 @@ if __name__ == '__main__':
                 # print(x.shape, y.shape)
                 optimizer.zero_grad()
                 # forward
-                pred = model(x)
+                pred, _ = model(x)
                 # compute the loss
                 loss = criterion(pred, y)
                 losses.append(loss.item())
@@ -111,7 +113,7 @@ if __name__ == '__main__':
                 x = torch.Tensor(x_val[i, :]).unsqueeze(0).to(device)
                 y = torch.Tensor(y_val[i, :]).unsqueeze(0).to(device)
                 # forward
-                pred = model(x)
+                pred, _ = model(x)
                 # compute the loss
                 loss = criterion(pred, y)
                 losses.append(loss.item())
@@ -123,4 +125,17 @@ if __name__ == '__main__':
 
     # Visualize attention map
     if args.visualize:
-        pass
+        model.load_state_dict(torch.load(args.checkpoint))
+        model.eval()
+        for i in range(test_length):
+            with torch.no_grad():
+                x = torch.Tensor(x_test[i, :]).unsqueeze(0).to(device)
+                y = torch.Tensor(y_test[i, :]).unsqueeze(0).to(device)
+                # forward
+                pred, weights = model(x)
+                # print(y, pred, weights)
+                plt.title('Attention Weights')
+                plt.xticks(np.arange(0, seq_length))
+                plt.yticks(np.arange(0, 1, step=0.1))
+                plt.bar(range(seq_length), weights.squeeze().cpu().numpy(), color='royalblue')
+                plt.savefig('output_{}.png'.format(i))

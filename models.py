@@ -94,9 +94,9 @@ class AttnLSTM(nn.Module):
 
     def forward(self, x):
         x, (h_n, c_n) = self.lstm(x)
-        x = self.attn(x)
+        x, weights = self.attn(x)
         x = self.fc(x)
-        return x
+        return x, weights
 
 # Test
 if __name__ == '__main__':

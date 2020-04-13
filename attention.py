@@ -64,7 +64,7 @@ class TemporalAttn(nn.Module):
         attention_vector = self.fc2(pre_activation)
         attention_vector = torch.tanh(attention_vector)
 
-        return attention_vector
+        return attention_vector, attention_weights
 
 # Test
 if __name__ == '__main__':
