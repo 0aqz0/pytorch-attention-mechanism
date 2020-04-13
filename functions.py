@@ -48,7 +48,7 @@ def train_epoch(model, criterion, optimizer, dataloader, device, epoch, log_inte
     print("Average Training Loss of Epoch {}: {:.6f} | Acc: {:.2f}%".format(epoch+1, training_loss, training_acc*100))
 
 
-def test(model, criterion, dataloader, device, epoch, writer):
+def val_epoch(model, criterion, dataloader, device, epoch, writer):
     model.eval()
     losses = []
     all_label = []
@@ -71,14 +71,14 @@ def test(model, criterion, dataloader, device, epoch, writer):
             all_pred.extend(prediction)
 
     # Compute the average loss & accuracy
-    test_loss = sum(losses)/len(losses)
+    val_loss = sum(losses)/len(losses)
     all_label = torch.stack(all_label, dim=0)
     all_pred = torch.stack(all_pred, dim=0)
-    test_acc = accuracy_score(all_label.squeeze().cpu().data.squeeze().numpy(), all_pred.cpu().data.squeeze().numpy())
+    val_acc = accuracy_score(all_label.squeeze().cpu().data.squeeze().numpy(), all_pred.cpu().data.squeeze().numpy())
     # Log
-    writer.add_scalars('Loss', {'test': test_loss}, epoch+1)
-    writer.add_scalars('Accuracy', {'test': test_acc}, epoch+1)
-    print("Average Test Loss: {:.6f} | Acc: {:.2f}%".format(test_loss, test_acc*100))
+    writer.add_scalars('Loss', {'val': val_loss}, epoch+1)
+    writer.add_scalars('Accuracy', {'val': val_acc}, epoch+1)
+    print("Average Validation Loss: {:.6f} | Acc: {:.2f}%".format(val_loss, val_acc*100))
 
 
 def visualize_attn(I, c):
