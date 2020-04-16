@@ -21,8 +21,6 @@ parser.add_argument('--train', action='store_true',
     help='Train the network')
 parser.add_argument('--visualize', action='store_true',
     help='Visualize the attention vector')
-parser.add_argument('--no_attention', action='store_true',
-    help='Train without attention')
 parser.add_argument('--no_save', action='store_true',
     help='Not save the model')
 parser.add_argument('--save_path', default='/home/haodong/Data/attention_models', type=str,
@@ -66,9 +64,7 @@ if __name__ == '__main__':
     test_set = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
     test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=True, num_workers=16)
     # Create model
-    if not args.no_attention:
-        print('Using Attention Model')
-    model = AttnVGG(sample_size=32, num_classes=100, attention=not args.no_attention).to(device)
+    model = AttnVGG(sample_size=32, num_classes=100).to(device)
     # Run the model parallelly
     if torch.cuda.device_count() > 1:
         print("Using {} GPUs".format(torch.cuda.device_count()))

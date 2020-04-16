@@ -30,8 +30,8 @@ class AttnVGG(nn.Module):
             self.classify = nn.Linear(in_features=512*3, out_features=num_classes, bias=True)
         else:
             self.classify = nn.Linear(in_features=512, out_features=num_classes, bias=True)
-        if init_weights:
-            self._initialize_weights()
+        # if init_weights:
+        #     self._initialize_weights()
 
     def forward(self, x):
         x = self.conv1(x)
@@ -60,7 +60,7 @@ class AttnVGG(nn.Module):
     def _make_layer(self, in_features, out_features, blocks, pool=False):
         layers = []
         for i in range(blocks):
-            conv2d = nn.Conv2d(in_channels=in_features, out_channels=out_features, kernel_size=3, padding=1)
+            conv2d = nn.Conv2d(in_channels=in_features, out_channels=out_features, kernel_size=3, padding=1, bias=False)
             layers += [conv2d, nn.BatchNorm2d(out_features), nn.ReLU(inplace=True)]
             in_features = out_features
             if pool:
@@ -80,7 +80,9 @@ class AttnVGG(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
 
-
+"""
+LSTM with attention
+"""
 class AttnLSTM(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers):
         super(AttnLSTM, self).__init__()
