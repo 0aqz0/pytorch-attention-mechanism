@@ -3,6 +3,10 @@ my codes for learning attention mechanism
 
 ## CNN with attention
 
+*Apply spatial attention to CIFAR100 dataset*
+
+<img src='figures/attn1.png' width=240> <img src="figures/attn2.png" width=240> <img src='figures/attn3.png' width=240>
+
 ### Usage
 
 Train the model:
@@ -18,6 +22,10 @@ $ python cnn-with-attention.py --visualize
 ```
 
 ## RNN with attention
+
+*Apply temporal attention to sequential data*
+
+*e.g. A sequence of length 20, the output is only related to the 5th position and the 13th position*
 
 <img align='center' src='figures/rnn-with-attention.png' width=480>
 
@@ -37,7 +45,7 @@ $ python rnn-with-attention.py --visualize
 
 ## Todos
 
-- [ ] CNN+attention
+- [x] CNN+attention
 - [x] RNN+attention
 
 ## References

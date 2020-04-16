@@ -25,7 +25,7 @@ parser.add_argument('--no_save', action='store_true',
     help='Not save the model')
 parser.add_argument('--save_path', default='/home/haodong/Data/attention_models', type=str,
     help='Path to save the model')
-parser.add_argument('--checkpoint', default='checkpoint.pth', type=str,
+parser.add_argument('--checkpoint', default='cnn_checkpoint.pth', type=str,
     help='Path to checkpoint')
 parser.add_argument('--epochs', default=300, type=int,
     help='Epochs for training')
@@ -102,7 +102,7 @@ if __name__ == '__main__':
                     images = inputs[0:16,:,:,:]
                     I = utils.make_grid(images, nrow=4, normalize=True, scale_each=True)
                     writer.add_image('origin', I)
-                    _, c1, c2, c3, c4 = model(images)
+                    _, c1, c2, c3 = model(images)
                     # print(I.shape, c1.shape, c2.shape, c3.shape, c4.shape)
                     attn1 = visualize_attn(I, c1)
                     writer.add_image('attn1', attn1)
@@ -110,6 +110,4 @@ if __name__ == '__main__':
                     writer.add_image('attn2', attn2)
                     attn3 = visualize_attn(I, c3)
                     writer.add_image('attn3', attn3)
-                    attn4 = visualize_attn(I, c4)
-                    writer.add_image('attn4', attn4)
                     break
