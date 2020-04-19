@@ -11,7 +11,7 @@ import math
 import argparse
 import numpy as np
 from datetime import datetime
-from functions import train_epoch, test, visualize_attn
+from functions import train_epoch, val_epoch, visualize_attn
 
 
 # Model
@@ -96,6 +96,7 @@ class ResCRNN(nn.Module):
                 # h_n: (num_layers * num_directions, batch, hidden_size)
                 # take the first layer's hidden states
                 score = self.attn(h_n[0])
+                score = F.dropout(score, p=0.5, training=self.training)
                 # print(score.shape)
                 weights = F.softmax(score, dim=1)
                 weights = weights.view(N, 1, self.last_size, self.last_size)
@@ -275,7 +276,7 @@ if __name__ == '__main__':
         print("Training Started".center(60, '#'))
         for epoch in range(args.epochs):
             train_epoch(model, criterion, optimizer, train_loader, device, epoch, args.log_interval, writer)
-            test(model, criterion, test_loader, device, epoch, writer)
+            val_epoch(model, criterion, test_loader, device, epoch, writer)
             if args.save:
                 torch.save(model.state_dict(), os.path.join(args.save_path, "cnnlstm_epoch{:03d}.pth".format(epoch+1)))
 
